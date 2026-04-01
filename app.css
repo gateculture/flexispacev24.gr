@@ -1,0 +1,187 @@
+/* --- FLEXISPACE PREMIUM CSS v22.0 (MESSENGER & ELITE UI) --- */
+
+:root {
+    --p: #7c3aed;          /* Το βασικό Μωβ */
+    --p-soft: #f5f3ff;     /* Απαλό Μωβ για backgrounds */
+    --m-blue: #0084ff;     /* Messenger Blue */
+    --m-gray: #e4e6eb;     /* Messenger Gray */
+    --bg: #F8F9FF;         /* Το λευκό του φόντου */
+    --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Reset & Base */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; 
+}
+
+body { 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    background-color: #000; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    color: #1e293b; 
+    overflow: hidden; 
+}
+
+/* 📱 Device Frame */
+.phone-wrapper { 
+    width: 100%; 
+    max-width: 430px; 
+    height: 94vh; 
+    background: var(--bg); 
+    position: relative; 
+    overflow: hidden; 
+    border: 12px solid #1a1a1a; 
+    border-radius: 4.5rem; 
+    box-shadow: 0 50px 100px -20px rgba(0,0,0,0.8); 
+}
+
+@media (max-width: 500px) { 
+    .phone-wrapper { height: 100vh; max-width: 100%; border: none; border-radius: 0; } 
+}
+
+/* 🔓 Screens Hierarchy (Διορθωμένο Z-Index) */
+#splash { 
+    position: absolute; 
+    inset: 0; 
+    background: white; 
+    z-index: 9999; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    transition: opacity 0.6s ease;
+    pointer-events: none; /* Για να μην μπλοκάρει τα κλικ αφού σβήσει */
+}
+
+#login-screen { 
+    position: absolute; 
+    inset: 0; 
+    background: white; 
+    z-index: 9000; 
+    display: flex; 
+    flex-direction: column; 
+    padding: 40px; 
+    justify-content: center; 
+    transition: opacity 0.5s ease;
+}
+
+/* 📱 NAVIGATOR */
+#bottom-bar { 
+    position: absolute; 
+    bottom: 0; 
+    width: 100%; 
+    padding: 20px 30px 45px 30px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    z-index: 5000; 
+    background: white;
+    border-top: 1px solid rgba(0,0,0,0.05); 
+}
+
+.nav-item { 
+    color: #94a3b8; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 4px; 
+    transition: 0.3s; 
+    cursor: pointer; 
+}
+
+.nav-item.active { 
+    color: var(--p); 
+    transform: scale(1.1); 
+}
+
+/* ➕ Κεντρικό Plus Κουμπί (Verification Redirect) */
+.plus-action { 
+    width: 65px; 
+    height: 65px; 
+    background: var(--p); 
+    color: white; 
+    border-radius: 22px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin-top: -70px; 
+    box-shadow: 0 15px 35px rgba(124, 58, 237, 0.4); 
+    border: 4px solid white; 
+    transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    cursor: pointer;
+}
+
+.plus-action:active { transform: scale(0.85) translateY(5px); }
+
+/* 💬 MESSENGER STYLE CHAT */
+.side-modal { 
+    position: absolute; 
+    inset: 0; 
+    background: white; 
+    z-index: 8500; 
+    display: none; 
+    flex-direction: column; 
+}
+
+#chat-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+}
+
+.chat-me { 
+    background: var(--m-blue); 
+    color: white; 
+    border-radius: 18px 18px 4px 18px; 
+    align-self: flex-end; 
+    padding: 12px 16px; 
+    font-size: 14px;
+    font-weight: 500; 
+    max-width: 75%;
+    box-shadow: 0 2px 8px rgba(0, 132, 255, 0.2);
+}
+
+.chat-them { 
+    background: var(--m-gray); 
+    color: #050505; 
+    border-radius: 18px 18px 18px 4px; 
+    align-self: flex-start; 
+    padding: 12px 16px; 
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 75%;
+}
+
+/* 💜 Animations & Tabs */
+.tab-view { 
+    display: none; 
+    height: 100%; 
+    overflow-y: auto; 
+    padding-top: 260px;
+    padding-bottom: 140px; 
+    scroll-behavior: smooth; 
+}
+
+.tab-view.active { 
+    display: block; 
+    animation: slideUp 0.5s var(--transition); 
+}
+
+@keyframes slideUp { 
+    from { opacity: 0; transform: translateY(30px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+.heart-active { 
+    color: #ef4444 !important; 
+    filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.4)); 
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
