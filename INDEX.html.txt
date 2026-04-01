@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FlexiSpace MVP | V24 2026 </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root { --p: #7c3aed; --bg: #F8F9FF; --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none !important; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #050505; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #1e293b; overflow: hidden; }
+        
+        .phone-wrapper { width: 100%; max-width: 430px; height: 94vh; background: var(--bg); position: relative; overflow: hidden; border: 12px solid #1a1a1a; border-radius: 4.5rem; box-shadow: 0 50px 100px -20px rgba(0,0,0,1); }
+        @media (max-width: 500px) { .phone-wrapper { height: 100vh; max-width: 100%; border: none; border-radius: 0; } }
+
+        /* STICKY COMPONENTS */
+        header { position: absolute; top: 0; width: 100%; z-index: 1000; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .nav-bar { position: absolute; bottom: 0; width: 100%; padding: 15px 25px 45px 25px; display: flex; justify-content: space-between; align-items: center; z-index: 5000; background: white; border-top: 1px solid #f1f5f9; }
+
+        .tab-view { display: none; height: 100%; overflow-y: auto; padding-top: 260px; padding-bottom: 160px; scroll-behavior: smooth; }
+        .tab-view.active { display: block; animation: slideUp 0.6s var(--transition); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CHAT PRO SYSTEM */
+        .chat-me { background: var(--p); color: white; border-radius: 20px 20px 4px 20px; align-self: flex-end; padding: 12px 16px; box-shadow: 0 5px 15px rgba(124, 58, 237, 0.2); font-size: 13px; font-weight: 600; }
+        .chat-them { background: #f1f5f9; color: #1e293b; border-radius: 20px 20px 20px 4px; align-self: flex-start; padding: 12px 16px; border: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; }
+
+        /* BOTTOM NAV OLD STYLE */
+        .nav-item { color: #94a3b8; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: var(--p); font-weight: 800; transform: scale(1.1); }
+        .nav-item i { font-size: 1.5rem; }
+        .plus-action { width: 65px; height: 65px; background: var(--p); color: white; border-radius: 22px; display: flex; align-items: center; justify-content: center; margin-top: -65px; box-shadow: 0 15px 35px rgba(124, 58, 237, 0.4); border: 4px solid white; cursor: pointer; }
+
+        .side-modal { position: absolute; inset: 0; background: white; z-index: 6000; display: none; flex-direction: column; animation: modalIn 0.4s var(--transition); }
+        @keyframes modalIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+        /* MAP NODES ENHANCED */
+        #map-overlay { position: absolute; inset: 0; background: white; z-index: 8000; display: none; flex-direction: column; }
+        #map { flex: 1; width: 100%; }
+        .map-node { background: white; border: 4px solid var(--p); border-radius: 15px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(124, 58, 237, 0.4); cursor: pointer; animation: pulseNode 2s infinite; }
+        @keyframes pulseNode { 0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(124, 58, 237, 0); } 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); } }
+
+        /* PURPLE LOCKER ANIMATION */
+        @keyframes floatLocker { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+        .purple-locker { width: 110px; height: 110px; background: var(--p); border-radius: 35px; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 40px rgba(124, 58, 237, 0.4); animation: floatLocker 2s ease-in-out infinite; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .heart-btn { width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: 0.3s; border: 1.5px solid #eee; z-index: 50; }
+        .heart-btn.liked { border-color: #ef4444; }
+        .heart-btn.liked i { color: #ef4444; }
+        
+        .verified-badge { background: #3b82f6; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 8px; border: 2px solid white; }
+    </style>
+</head>
+<body>
+
+    <div class="phone-wrapper" id="main-frame">
+        
+        <div id="splash" class="absolute inset-0 bg-white z-[9999] flex flex-col items-center justify-center transition-opacity duration-1000">
+            <div class="w-24 h-24 bg-purple-600 rounded-[2.8rem] flex items-center justify-center animate-bounce shadow-2xl">
+                <i class="fa-solid fa-bolt-lightning text-white text-4xl"></i>
+            </div>
+            <h1 class="text-3xl font-black italic mt-6 text-purple-600">FlexiSpace MVP</h1>
+            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">2026 Version 24</p>
+        </div>
+
+        <div id="login-screen" class="absolute inset-0 z-[9000] flex flex-col p-10 justify-center bg-white">
+            <div class="text-center mb-12">
+                <div class="w-16 h-16 bg-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-200">
+                    <i class="fa-solid fa-bolt text-white text-2xl"></i>
+                </div>
+                <h2 class="text-4xl font-black italic text-gray-900 tracking-tighter">Elite Login</h2>
+                <p class="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">Access Node Network</p>
+            </div>
+            <div class="space-y-4">
+                <button type="button" onclick="performAppLogin()" class="w-full p-5 bg-white text-gray-800 rounded-2xl font-bold flex items-center justify-center gap-3 border border-gray-200 shadow-sm active:scale-95 transition-all">
+                    <img src="https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png" alt="Google" style="width: 22px; height: 22px; min-width: 22px; object-fit: contain;">
+                    <span style="font-size: 15px;">Continue with Google</span>
+                </button>
+                <button type="button" onclick="performAppLogin()" class="w-full p-5 bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all">
+                    <i class="fa-brands fa-apple text-2xl"></i>
+                    <span style="font-size: 15px;">Continue with Apple</span>
+                </button>
+                <div class="py-6 flex items-center gap-4 text-gray-300 uppercase text-[10px] font-black">
+                    <div class="h-[1px] bg-gray-100 flex-1"></div> or email <div class="h-[1px] bg-gray-100 flex-1"></div>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <input type="email" placeholder="Enter your email" class="w-full p-5 rounded-2xl bg-gray-50 border border-gray-100 font-bold text-sm outline-none focus:border-purple-600 transition text-gray-900">
+                    <button type="button" onclick="performAppLogin()" class="w-full p-5 bg-purple-600 text-white rounded-2xl font-black italic shadow-xl shadow-purple-200 active:scale-95 transition-all">Enter Workspace</button>
+                </div>
+            </div>
+            <p class="mt-12 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest px-6">Secure encrypted session • 2026 Protocol</p>
+        </div>
+
+        <div id="map-overlay">
+            <div class="p-8 glass flex justify-between items-center border-b z-10">
+                <div>
+                    <h3 class="font-black italic text-xl uppercase tracking-tighter">Athens GIS Map</h3>
+                    <p class="text-[9px] font-bold text-gray-400 uppercase">3 Nodes Active</p>
+                </div>
+                <button onclick="toggleMap()" class="w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center font-bold">✕</button>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <header id="app-header" class="hidden">
+            <div class="px-8 pt-12 pb-4">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-2">
+                        <div class="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg text-white text-lg"><i class="fa-solid fa-bolt"></i></div>
+                        <h1 class="text-xl font-black italic text-purple-600 leading-none">FlexiSpace.</h1>
+                    </div>
+                    <button onclick="toggleMap()" class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center border border-purple-100 shadow-sm transition active:scale-90"><i class="fa-solid fa-map-location-dot text-lg"></i></button>
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-300"></i>
+                    <input type="text" placeholder="Search elite spaces..." class="w-full bg-white border border-gray-100 rounded-full py-4 pl-14 pr-6 font-bold text-xs shadow-sm outline-none focus:border-purple-600 transition">
+                </div>
+            </div>
+            <div id="category-carousel" class="flex gap-10 overflow-x-auto no-scrollbar px-10 pb-6">
+                <button onclick="filterBy('All', this)" class="f-btn active font-black text-[11px] uppercase tracking-widest text-purple-600 border-b-2 border-purple-600 pb-1 flex-shrink-0">All</button>
+                <button onclick="filterBy('Parking', this)" class="f-btn font-black text-[11px] uppercase tracking-widest text-gray-400 pb-1 flex-shrink-0">Parking</button>
+                <button onclick="filterBy('Storage', this)" class="f-btn font-black text-[11px] uppercase tracking-widest text-gray-400 pb-1 flex-shrink-0">Storage</button>
+                <button onclick="filterBy('Work', this)" class="f-btn font-black text-[11px] uppercase tracking-widest text-gray-400 pb-1 flex-shrink-0">Work</button>
+            </div>
+        </header>
+
+        <main id="app-main" class="hidden h-full">
+            <div id="view-explore" class="tab-view active">
+                <div id="pending-alert" class="px-8 mb-10 hidden" onclick="openActivePortal()">
+                    <div class="bg-gradient-to-br from-purple-600 to-indigo-800 p-8 rounded-[3rem] text-white shadow-2xl relative active:scale-95 transition cursor-pointer overflow-hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="bg-green-400 text-green-950 text-[10px] font-black px-4 py-1.5 rounded-full uppercase">Live Node Active</span>
+                            <div class="text-[10px] font-black italic"><i class="fa-solid fa-clock mr-1"></i> 01:59:45</div>
+                        </div>
+                        <h4 class="text-2xl font-black italic leading-tight mb-1">Riga Fereou 12, Patra</h4>
+                        <p class="text-[10px] font-bold opacity-60 uppercase tracking-widest">Tap for Instructions & Digital Keys</p>
+                        <i class="fa-solid fa-chevron-right absolute right-8 bottom-10 text-white opacity-30 text-xl"></i>
+                    </div>
+                </div>
+                <div id="city-sections" class="space-y-12 pb-44 px-8"></div>
+            </div>
+
+            <div id="view-likes" class="tab-view pt-24 px-8">
+                <h2 class="text-4xl font-black italic tracking-tighter mb-10 uppercase text-red-500">Saved</h2>
+                <div id="fav-list" class="space-y-10 pb-32 flex flex-col items-center"></div>
+            </div>
+
+            <div id="view-messages" class="tab-view pt-24 px-8">
+                <h2 class="text-4xl font-black italic tracking-tighter mb-10 uppercase leading-none">Inbox</h2>
+                <div id="inbox-list" class="space-y-4 pb-32"></div>
+            </div>
+
+            <div id="view-profile" class="tab-view pt-24 px-8 text-center">
+                <div class="flex flex-col items-center mb-12">
+                    <img src="https://i.pravatar.cc/150?u=giannispap" class="w-32 h-32 rounded-[3.5rem] border-4 border-white shadow-2xl mb-6 object-cover">
+                    <h3 class="text-3xl font-black italic uppercase tracking-tighter leading-none">ΓΙΑΝΝΗΣ ΠΑΨ <span class="verified-badge"><i class="fa-solid fa-check"></i></span></h3>
+                    <p class="text-purple-600 font-black text-[10px] uppercase mt-2 italic bg-purple-50 px-5 py-2 rounded-full">Elite Founder 2026</p>
+                </div>
+                <div class="space-y-4 pb-40 text-left">
+                    <button onclick="openSubModal('wallet-modal')" class="w-full p-8 bg-white rounded-[3rem] flex justify-between items-center shadow-sm border border-gray-50">
+                        <span class="font-bold italic text-base flex items-center gap-5"><i class="fa-solid fa-wallet text-purple-600 text-xl"></i> My Wallet</span>
+                        <span class="font-black text-purple-600">145.00€</span>
+                    </button>
+                    <button onclick="openSubModal('support-modal')" class="w-full p-8 bg-white rounded-[3rem] flex justify-between items-center shadow-sm border border-gray-50">
+                        <span class="font-bold italic text-base flex items-center gap-5"><i class="fa-solid fa-headset text-purple-600 text-xl"></i> Υποστήριξη AI Bot</span>
+                        <i class="fa-solid fa-chevron-right text-gray-200"></i>
+                    </button>
+                    <button onclick="location.reload()" class="w-full p-8 bg-red-50 text-red-500 font-black italic rounded-[3rem] mt-12 text-center uppercase tracking-widest shadow-sm">Logout Session</button>
+                </div>
+            </div>
+        </main>
+
+        <nav id="bottom-bar" class="hidden nav-bar">
+            <div onclick="navTo('explore')" class="nav-item active"><i class="fa-solid fa-compass text-2xl"></i><span class="text-[9px] uppercase font-bold">Explore</span></div>
+            <div onclick="navTo('messages')" class="nav-item"><i class="fa-solid fa-comment-dots text-2xl"></i><span class="text-[9px] uppercase font-bold">Inbox</span></div>
+            
+            <div class="plus-action" onclick="openSubModal('host-modal')">
+                <i class="fa-solid fa-plus text-3xl"></i>
+            </div>
+            
+            <div onclick="navTo('likes')" class="nav-item"><i class="fa-solid fa-heart text-2xl"></i><span class="text-[9px] uppercase font-bold">Saved</span></div>
+            <div onclick="navTo('profile')" class="nav-item"><i class="fa-solid fa-user-ninja text-2xl"></i><span class="text-[9px] uppercase font-bold">Profile</span></div>
+        </nav>
+
+        <div id="host-modal" class="side-modal">
+            <div class="p-8 border-b flex items-center gap-5 sticky top-0 bg-white z-10">
+                <button onclick="closeSubModal('host-modal')" class="text-2xl text-purple-600"><i class="fa-solid fa-chevron-left"></i></button>
+                <h3 class="font-black italic text-2xl uppercase tracking-tighter leading-none">Become a Host</h3>
+            </div>
+            <div class="p-8 space-y-6 flex-1 overflow-y-auto pb-32">
+                <div class="space-y-4">
+                    <input type="text" placeholder="Τίτλος Χώρου" class="w-full p-5 rounded-2xl bg-gray-50 border border-gray-100 font-bold outline-none focus:border-purple-600 transition">
+                    <select class="w-full p-5 rounded-2xl bg-gray-50 border border-gray-100 font-bold outline-none"><option>Parking</option><option>Storage</option><option>Work</option></select>
+                    <input type="number" placeholder="Τετραγωνικά (m²)" class="w-full p-5 rounded-2xl bg-gray-50 border border-gray-100 font-bold outline-none">
+                    <textarea placeholder="Περιγραφή..." class="w-full p-5 rounded-2xl bg-gray-50 border border-gray-100 font-bold outline-none h-32"></textarea>
+                    <div class="p-8 border-2 border-dashed border-gray-200 rounded-[2.5rem] text-center space-y-2 cursor-pointer" onclick="alert('File Manager Opening...')">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-purple-600"></i>
+                        <p class="font-black italic text-sm">Ανέβασμα Αρχείων</p>
+                    </div>
+                    <button onclick="alert('Η αίτηση στάλθηκε!'); closeSubModal('host-modal')" class="w-full p-6 bg-purple-600 text-white rounded-[2rem] font-black italic uppercase shadow-xl">Υποβολη Node</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="chat-modal" class="side-modal" style="display:none; flex-direction:column; background:white; position:absolute; inset:0; z-index:9998;">
+            <div class="p-8 border-b flex items-center gap-4 sticky top-0 bg-white z-10 shadow-sm">
+                <button onclick="closeChat()" class="text-2xl text-purple-600 active:scale-75 transition"><i class="fa-solid fa-chevron-left"></i></button>
+                <img id="chat-img" src="" class="w-12 h-12 rounded-2xl object-cover border-2 border-purple-50">
+                <h4 id="chat-name" class="font-black italic text-xl tracking-tighter uppercase leading-none"></h4>
+            </div>
+            <div id="chat-flow" class="flex-1 p-8 overflow-y-auto space-y-6 flex flex-col bg-gray-50 no-scrollbar"></div>
+            <div class="p-6 border-t flex gap-3 bg-white sticky bottom-0 w-full z-20">
+                <input type="text" id="chat-input-field" placeholder="Aa..." class="flex-1 p-4 rounded-2xl bg-gray-100 font-bold outline-none border-none text-sm focus:ring-2 focus:ring-purple-500/10">
+                <button onclick="realSendMsg()" class="bg-purple-600 text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="active-portal-modal" class="side-modal" style="display:none; flex-direction:column; background:white; position:absolute; inset:0; z-index:9997;">
+            <div class="p-8 border-b flex items-center gap-5 sticky top-0 bg-white z-10">
+                <button onclick="closeSubModal('active-portal-modal')" class="text-2xl text-purple-600 active:scale-75 transition"><i class="fa-solid fa-chevron-left"></i></button>
+                <h3 class="font-black italic text-2xl uppercase tracking-tighter leading-none">Node Access</h3>
+            </div>
+            <div class="p-10 flex-1 flex flex-col items-center justify-center space-y-8 pb-32">
+                <div class="w-full bg-white p-12 rounded-[4.5rem] shadow-2xl relative border border-gray-100 text-center text-left">
+                    <p class="text-[10px] font-black text-purple-600 uppercase mb-8 italic tracking-widest leading-none opacity-60">Your Digital Key</p>
+                    <div class="bg-gray-50 p-6 rounded-[3rem] inline-block mb-8"><i class="fa-solid fa-qrcode text-[10rem] text-gray-900"></i></div>
+                    <h3 class="text-3xl font-black italic uppercase tracking-tighter text-gray-900 mb-2">FLEXI-95021-X</h3>
+                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Expires in 01:59:45</p>
+                </div>
+                <div class="space-y-4 w-full">
+                    <div class="p-8 bg-gray-50 rounded-[3rem] border border-gray-200 text-left">
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-2 italic tracking-widest leading-none">Garage Entry Code</p>
+                        <p class="text-3xl font-black italic text-purple-600 tracking-[0.2em]">#4201*</p>
+                    </div>
+                    <div class="p-8 bg-purple-50 rounded-[3rem] border border-purple-100 text-left">
+                        <p class="text-[10px] font-black text-purple-600 uppercase mb-2 italic">Node Instructions</p>
+                        <p class="font-black italic text-sm text-gray-800 leading-relaxed">"Θα συναντήσεις τον Κώστα στην είσοδο του γκαράζ. Θα σου δώσει το τηλεκοντρόλ για τον όροφο -1."</p>
+                    </div>
+                </div>
+                <button onclick="window.open('http://maps.google.com')" class="bg-blue-500 text-white w-full py-7 rounded-[2.5rem] font-black uppercase shadow-xl italic text-lg leading-none"><i class="fa-solid fa-location-arrow mr-2"></i> Start GPS Navigation</button>
+            </div>
+        </div>
+
+        <div id="booking-modal" class="fixed inset-0 bg-black/80 z-[8000] hidden flex items-end">
+            <div class="w-full bg-white rounded-t-[5.5rem] p-10 max-h-[96vh] overflow-y-auto no-scrollbar shadow-2xl">
+                <div id="booking-render"></div>
+            </div>
+        </div>
+
+        <div id="locked-success" class="fixed inset-0 bg-white z-[9999] hidden flex flex-col items-center justify-center p-12 text-center">
+            <div class="purple-locker mb-10"><i class="fa-solid fa-lock text-white text-5xl"></i></div>
+            <h2 class="text-5xl font-black italic text-purple-600 mb-4 uppercase tracking-tighter">Locked! 🔒</h2>
+            <p class="text-gray-400 font-bold mb-12 italic text-lg px-6 leading-relaxed">Η κράτηση ολοκληρώθηκε! <br> Ο χώρος είναι πλέον δεσμευμένος.</p>
+            <div class="w-full space-y-4">
+                <button onclick="confirmNavigation()" class="w-full bg-blue-500 text-white py-7 rounded-[2.8rem] font-black uppercase shadow-xl text-xl italic active:scale-95 transition-all flex items-center justify-center gap-3"><i class="fa-solid fa-location-arrow"></i> Start GPS</button>
+                <button onclick="returnHome()" class="w-full text-gray-400 font-black italic text-sm uppercase tracking-widest py-4 underline underline-offset-8">Ολοκληρωση</button>
+            </div>
+        </div>
+
+        <div id="support-modal" class="side-modal">
+            <div class="p-8 border-b flex items-center gap-5 sticky top-0 bg-white z-10">
+                <button onclick="closeSubModal('support-modal')" class="text-2xl text-purple-600"><i class="fa-solid fa-chevron-left"></i></button>
+                <h3 class="font-black italic text-xl uppercase tracking-tighter">Υποστήριξη</h3>
+            </div>
+            <div id="support-flow" class="flex-1 p-8 overflow-y-auto space-y-6 flex flex-col bg-gray-50">
+                <div class="chat-them font-bold leading-relaxed shadow-sm italic">Γεια σου Γιάννη! 👋 Είμαι ο **Flexi Master Bot**. Πώς μπορώ να σε βοηθήσω με το δίκτυο;</div>
+                <div class="grid grid-cols-1 gap-3" id="support-options">
+                    <button onclick="askBot('Πρόβλημα με την Πληρωμή', 'payment')" class="p-6 bg-white border border-gray-100 rounded-[2rem] text-left font-black text-xs italic shadow-sm active:bg-purple-50 transition-all">💳 Πληρωμή / Wallet</button>
+                    <button onclick="askBot('Θέλω να γίνω Host;', 'host')" class="p-6 bg-white border border-gray-100 rounded-[2rem] text-left font-black text-xs italic shadow-sm active:bg-purple-50 transition-all">🏠 Become a Host</button>
+                </div>
+            </div>
+            <div class="p-6 text-center border-t glass"><p class="text-[10px] font-black text-gray-400 uppercase italic leading-none">Email: flexispace@gmail.com</p></div>
+        </div>
+
+        <div id="wallet-modal" class="side-modal">
+            <div class="p-8 border-b flex items-center gap-5"><button onclick="closeSubModal('wallet-modal')" class="text-2xl text-purple-600"><i class="fa-solid fa-chevron-left"></i></button><h3 class="font-black italic text-2xl uppercase tracking-tighter">Wallet</h3></div>
+            <div class="p-10 text-center">
+                <div class="bg-gradient-to-br from-purple-600 to-indigo-800 rounded-[4rem] p-12 text-white shadow-2xl mb-12 relative overflow-hidden">
+                    <p class="text-[10px] font-black uppercase opacity-60 mb-2 italic">Total Balance</p>
+                    <h3 class="text-6xl font-black italic tracking-tighter">145.00€</h3>
+                    <i class="fa-solid fa-wallet absolute -right-4 -bottom-4 text-9xl opacity-10"></i>
+                </div>
+                <button class="w-full bg-purple-600 text-white py-8 rounded-[2.5rem] font-black shadow-xl uppercase italic text-lg shadow-purple-500/30" onclick="alert('Withdrawal request initiated!')">Withdraw Funds</button>
+            </div>
+        </div>
+
+    </div>
+<script>
+    let map;
+    const state = {
+        activeTab: 'explore',
+        isFromMap: false,
+        wishlist: new Set(JSON.parse(localStorage.getItem('saved_nodes')) || []),
+        listings: [],
+        chatHistory: {
+            "Κώστας Α.": { avatar: "https://i.pravatar.cc/150?u=kosta", msgs: [{s:'them', t:'Γεια σου Γιάννη! Ο χώρος είναι έτοιμος.', h:'12:32'}] },
+            "Ελένη Μ.": { avatar: "https://i.pravatar.cc/150?u=eleni", msgs: [{s:'them', t:'Σε περιμένω στις 18:00.', h:'10:15'}] }
+        }
+    };
+
+    const cityData = { "Κολωνάκι": 15, "Κυψέλη": 6, "Θεσσαλονίκη": 10, "Πάτρα": 5, "Σύνταγμα": 12 };
+
+    function initApp() {
+        const cities = Object.keys(cityData);
+        const types = ["Parking", "Storage", "Work", "Event"];
+        const hosts = Object.keys(state.chatHistory);
+        
+        state.listings = [];
+        for(let i=0; i<30; i++) {
+            const city = cities[i % cities.length];
+            const type = types[i % 3];
+            const host = hosts[i % hosts.length] || "Elite Host";
+            
+            // Δυναμικές Παροχές ανάλογα με τον τύπο
+            let amenities = [];
+            if(type === "Parking") {
+                amenities = [{n:"WiFi", f:true}, {n:"CCTV", f:true}, {n:"Πλύσιμο", f:false, p:15}];
+            } else if(type === "Event") {
+                amenities = [{n:"Ηχοσύστημα", f:true}, {n:"Lights", f:true}, {n:"DJ Set", f:false, p:50}];
+            } else {
+                amenities = [{n:"Coffee", f:true}, {n:"WiFi 6", f:true}, {n:"Εκτυπωτής", f:false, p:5}];
+            }
+
+            state.listings.push({
+                id: 95000 + i, 
+                city, 
+                type, 
+                host,
+                hostImg: `https://i.pravatar.cc/150?u=${i}`, 
+                price: cityData[city], 
+                sqm: 25 + i,
+                desc: `Premium ${type} Node στην καρδιά της περιοχής ${city}.`,
+                rating: (4.5 + Math.random() * 0.5).toFixed(1),
+                amenities,
+                gallery: [
+                    `https://picsum.photos/seed/${i+100}/800/600`,
+                    `https://picsum.photos/seed/${i+200}/800/600`
+                ],
+                coords: [37.9838 + (Math.random() - 0.5) * 0.02, 23.7275 + (Math.random() - 0.5) * 0.02]
+            });
+        }
+        
+        try { initMap(); } catch(e) { console.log("Map error"); }
+        renderCitySections();
+        renderSaved();
+        renderInbox();
+    }
+
+    function initMap() {
+        if(map) map.remove();
+        map = L.map('map', { zoomControl: false }).setView([37.9838, 23.7275], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+        
+        // Τώρα ο χάρτης διαβάζει όλες τις αγγελίες από το state
+        state.listings.forEach(l => {
+            const icon = L.divIcon({ 
+                className:'', 
+                html:`<div class="map-node"><i class="fa-solid ${l.type==='Parking'?'fa-car':l.type==='Event'?'fa-music':'fa-briefcase'} text-purple-600 text-lg"></i></div>`, 
+                iconSize:[48,48] 
+            });
+            L.marker(l.coords, {icon}).addTo(map).on('click', () => { 
+                state.isFromMap = true; 
+                openBooking(l.id); 
+            });
+        });
+    }
+
+    function buildListingHTML(l) {
+        const isLiked = state.wishlist.has(l.id);
+        return `
+            <div class="w-64 flex-shrink-0 bg-white rounded-[3.2rem] shadow-sm overflow-hidden border border-gray-50 relative active:scale-[0.98] transition-all">
+                <button class="heart-btn absolute top-5 right-5 z-10 ${isLiked ? 'liked' : ''}" onclick="toggleLike(this, ${l.id})">
+                    <i class="fa-solid fa-heart"></i>
+                </button>
+                <div onclick="openBooking(${l.id})">
+                    <img src="${l.gallery[0]}" class="h-44 w-full object-cover">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[8px] font-black text-purple-600 uppercase">${l.type} • ${l.city}</span>
+                            <span class="text-[9px] font-bold text-gray-400">⭐ ${l.rating}</span>
+                        </div>
+                        <h4 class="text-base font-black italic uppercase truncate leading-none mb-1">${l.host}</h4>
+                        <p class="text-xl font-black text-purple-600">${l.price}€</p>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+  function openBooking(id) {
+    const l = state.listings.find(i => i.id === id);
+    if(!l) return;
+
+    // 1. Dynamic Pricing Logic
+    let areaMultiplier = 1;
+    if(l.city === "Κολωνάκι" || l.city === "Σύνταγμα") areaMultiplier = 1.8;
+    if(l.city === "Θεσσαλονίκη") areaMultiplier = 1.4;
+    const finalPrice = (l.price * areaMultiplier).toFixed(2);
+
+    // 2. Amenities HTML (Δυναμικές Παροχές)
+    const amHtml = l.amenities.map(a => `
+        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+            <span class="font-bold text-[11px] italic uppercase tracking-tighter">${a.n}</span>
+            <span class="text-[9px] font-black uppercase ${a.f ? 'text-green-500' : 'text-purple-600'}">
+                ${a.f ? 'FREE' : '+'+a.p+'€'}
+            </span>
+        </div>
+    `).join('');
+
+    // 3. Rendering the Modal
+    document.getElementById('booking-render').innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
+                <img src="${l.hostImg}" class="w-12 h-12 rounded-full object-cover border-2 border-purple-100 shadow-sm">
+                <div>
+                    <h3 class="font-black italic text-lg leading-none uppercase tracking-tighter">${l.host}</h3>
+                    <p class="text-[9px] text-gray-400 uppercase font-bold mt-1">Elite Node • ${l.city}</p>
+                </div>
+            </div>
+            <button onclick="closeModal()" class="text-3xl text-gray-300 active:scale-75 transition">×</button>
+        </div>
+
+        <img src="${l.gallery[0]}" class="w-full h-56 rounded-[3.5rem] object-cover shadow-2xl mb-6">
+        <div class="px-2 mb-8">
+            <h2 class="text-2xl font-black italic uppercase tracking-tighter mb-2">${l.type} Space</h2>
+            <p class="text-gray-500 text-xs font-bold italic leading-relaxed">${l.desc}</p>
+        </div>
+
+        <div class="space-y-4 mb-8 bg-purple-50/30 p-6 rounded-[2.5rem]">
+            <p class="text-[10px] font-black uppercase text-purple-600 px-2 tracking-widest text-center">📅 Select Your Session</p>
+            <div class="flex flex-col gap-3">
+                <input type="date" id="book-date" value="2026-04-01" 
+                       class="w-full p-4 rounded-2xl bg-white border-none font-bold text-gray-800 outline-none text-sm shadow-sm">
+                <div class="flex gap-3">
+                    <input type="time" id="start-time" value="09:00" class="flex-1 p-4 rounded-2xl bg-white border-none font-bold text-sm shadow-sm">
+                    <input type="time" id="end-time" value="17:00" class="flex-1 p-4 rounded-2xl bg-white border-none font-bold text-sm shadow-sm">
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-10 px-2">
+            <p class="text-[10px] font-black uppercase text-gray-400 mb-4 tracking-widest">Included & Extras</p>
+            <div class="grid grid-cols-2 gap-3">${amHtml}</div>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-gray-100 pt-8 mt-4">
+            <div>
+                <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest">Estimated Total</p>
+                <p class="text-4xl font-black italic text-purple-600 tracking-tighter">${finalPrice}€</p>
+            </div>
+            <button onclick="confirmPayment()" class="bg-purple-600 text-white px-10 py-6 rounded-[2rem] font-black italic text-sm shadow-xl active:scale-95 transition-all uppercase tracking-tighter">
+                Pay & Lock
+            </button>
+        </div>
+        
+        <button onclick="openChat('${l.host}')" class="w-full mt-8 text-purple-600 font-black italic underline uppercase text-[10px] tracking-widest">
+            Contact Host Directly
+        </button>
+    `;
+    document.getElementById('booking-modal').classList.remove('hidden');
+}
+    
+    
+    function toggleLike(btn, id) { event.stopPropagation(); btn.classList.toggle('liked'); if(state.wishlist.has(id)) state.wishlist.delete(id); else state.wishlist.add(id); localStorage.setItem('saved_nodes', JSON.stringify([...state.wishlist])); renderSaved(); }
+    function renderSaved() { const container = document.getElementById('fav-list'); if(!container) return; const list = state.listings.filter(l => state.wishlist.has(l.id)); container.innerHTML = list.length ? list.map(l => buildListingHTML(l)).join('') : `<div class="text-center py-40 opacity-30 font-black italic text-2xl uppercase px-10">No saved nodes</div>`; }
+    function renderInbox() { const container = document.getElementById('inbox-list'); if(!container) return; container.innerHTML = Object.keys(state.chatHistory).map(name => `<div onclick="openChat('${name}')" class="p-6 bg-white rounded-[2.5rem] flex items-center gap-5 shadow-sm border border-gray-50 active:scale-95 transition"><img src="${state.chatHistory[name].avatar}" class="w-16 h-16 rounded-2xl object-cover shadow-md"><div class="flex-1"><h4 class="font-black italic text-lg">${name}</h4><p class="text-[11px] text-gray-400 font-bold truncate mt-1">${state.chatHistory[name].msgs.at(-1).t}</p></div></div>`).join(''); }
+    function openChat(name) { closeModal(); document.getElementById('chat-name').innerText = name; document.getElementById('chat-img').src = state.chatHistory[name]?.avatar || ""; renderBubbles(name); document.getElementById('chat-modal').style.display = 'flex'; }
+    function renderBubbles(name) { const flow = document.getElementById('chat-flow'); flow.innerHTML = (state.chatHistory[name]?.msgs || []).map(m => `<div class="flex ${m.s === 'me' ? 'justify-end' : 'justify-start'} animate-slideUp"><div class="${m.s === 'me' ? 'chat-me' : 'chat-them'}">${m.t}</div></div>`).join(''); flow.scrollTop = flow.scrollHeight; }
+    function realSendMsg() { const inp = document.getElementById('chat-input-field'); const name = document.getElementById('chat-name').innerText; if(!inp.value.trim()) return; state.chatHistory[name].msgs.push({s:'me', t: inp.value}); renderBubbles(name); inp.value = ""; }
+    function navTo(tabId) { state.activeTab = tabId; document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active')); const target = document.getElementById(`view-${tabId}`); if(target) target.classList.add('active'); document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active')); if(event && event.currentTarget) event.currentTarget.classList.add('active'); document.getElementById('app-header').style.display = (tabId === 'explore') ? 'block' : 'none'; if(tabId === 'messages') renderInbox(); if(tabId === 'likes') renderSaved(); }
+    function toggleMap() { const mc = document.getElementById('map-overlay'); mc.style.display = (mc.style.display === 'flex') ? 'none' : 'flex'; if(mc.style.display === 'flex' && map) setTimeout(() => map.invalidateSize(), 200); }
+    function openSubModal(id) { const el = document.getElementById(id); if(el) el.style.display = 'flex'; }
+    function closeSubModal(id) { const el = document.getElementById(id); if(el) el.style.display = 'none'; }
+    function closeModal() { const el = document.getElementById('booking-modal'); if(el) el.classList.add('hidden'); }
+    function closeChat() { const el = document.getElementById('chat-modal'); if(el) el.style.display = 'none'; }
+    function confirmPayment() { closeModal(); const el = document.getElementById('locked-success'); if(el) el.style.display = 'flex'; }
+    function returnHome() { const el = document.getElementById('locked-success'); if(el) el.style.display = 'none'; navTo('explore'); }
+    function confirmNavigation() { alert('GPS routing started...'); returnHome(); }
+    function performAppLogin() { document.getElementById('splash').style.display = 'none'; document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-header').classList.remove('hidden'); document.getElementById('app-main').classList.remove('hidden'); document.getElementById('bottom-bar').classList.remove('hidden'); document.getElementById('bottom-bar').style.display = 'flex'; initApp(); }
+    function filterBy(cat, btn) { document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active', 'text-purple-600', 'border-b-2', 'border-purple-600')); if(btn) btn.classList.add('active', 'text-purple-600', 'border-b-2', 'border-purple-600'); renderCitySections(cat); }
+    function renderCitySections(filter = 'All') { const container = document.getElementById('city-sections'); if(!container) return; container.innerHTML = ""; Object.keys(cityData).forEach(city => { const list = state.listings.filter(l => l.city === city && (filter === 'All' || l.type === filter)); if(list.length > 0) { container.innerHTML += `<div class="mb-10"><h3 class="text-2xl font-black italic text-gray-900 uppercase mb-4 tracking-tighter leading-none">${city}</h3><div class="flex gap-4 overflow-x-auto no-scrollbar pb-6">${list.map(l => buildListingHTML(l)).join('')}</div></div>`; } }); }
+
+    window.onload = () => { setTimeout(() => { const s = document.getElementById('splash'); if(s) { s.style.opacity = '0'; setTimeout(() => { s.style.display = 'none'; document.getElementById('login-screen').style.display = 'flex'; }, 700); } }, 2000); };
+function resetBot() {
+    const flow = document.getElementById('support-flow');
+    const options = document.getElementById('support-options');
+    
+    if(!flow || !options) return;
+
+    // Επαναφορά του αρχικού μηνύματος
+    flow.innerHTML = `
+        <div class="chat-them font-bold leading-relaxed shadow-sm italic text-sm">
+            Γεια σου Γιάννη! 👋 Είμαι ο **Flexi Master Bot**. Πώς μπορώ να σε βοηθήσω με το δίκτυο;
+        </div>
+    `;
+
+    // Επανεμφάνιση των κουμπιών (Πληρωμή / Host)
+    options.style.display = 'grid';
+    flow.appendChild(options);
+}
+
+function askBot(q, type) { 
+    const flow = document.getElementById('support-flow');
+    const options = document.getElementById('support-options');
+    
+    if(!flow) return;
+
+    // Κρύβουμε τις επιλογές για να ξεκινήσει το chat
+    if(options) options.style.display = 'none';
+
+    // Εμφάνιση ερώτησης χρήστη (Δεξιά)
+    flow.innerHTML += `
+        <div class="flex justify-end animate-slideUp mb-4">
+            <div class="bg-purple-600 text-white p-4 rounded-2xl font-bold shadow-sm max-w-[80%] text-sm">
+                ${q}
+            </div>
+        </div>`;
+    
+    flow.scrollTop = flow.scrollHeight;
+
+    // Στοχευμένη απάντηση Bot (Αριστερά)
+    setTimeout(() => {
+        let response = "";
+        
+        if(type === 'payment') {
+            response = "Για προβλήματα πληρωμής, βεβαιωθείτε ότι το Wallet σας έχει υπόλοιπο. Δεχόμαστε Apple Pay, Google Pay και κάρτες. Αν η χρέωση απέτυχε, το ποσό επιστρέφεται αυτόματα.";
+        } else if(type === 'host') {
+            response = "Για να γίνετε Host, πατήστε το κουμπί (+) στην κεντρική οθόνη. Θα χρειαστεί να ανεβάσετε φωτογραφίες του χώρου και έγγραφα ιδιοκτησίας για έγκριση.";
+        } else {
+            response = "Είμαι ο Flexi Bot και είμαι εδώ για να βοηθήσω! Μπορείτε να μας στείλετε email στο flexispace@gmail.com.";
+        }
+
+        flow.innerHTML += `
+            <div class="flex justify-start animate-slideUp mb-4">
+                <div class="chat-them bg-white border border-gray-100 p-4 rounded-2xl font-bold shadow-sm max-w-[80%] italic text-gray-800 text-sm">
+                    ${response}
+                </div>
+            </div>
+            <div class="flex justify-center mt-4">
+                <button onclick="resetBot()" class="text-[10px] font-black uppercase text-purple-600 tracking-widest bg-purple-50 px-4 py-2 rounded-full active:scale-95 transition">Πισω στισ επιλογεσ</button>
+            </div>`;
+        
+        flow.scrollTop = flow.scrollHeight;
+    }, 800);
+}
+function resetBot() {
+    const flow = document.getElementById('support-flow');
+    const options = document.getElementById('support-options');
+    
+    if(!flow || !options) return;
+
+    // Καθαρίζουμε το ιστορικό του bot και επαναφέρουμε το αρχικό μήνυμα [cite: 83, 84]
+    flow.innerHTML = `
+        <div class="chat-them font-bold leading-relaxed shadow-sm italic text-sm">
+            Γεια σου Γιάννη! 👋 Είμαι ο **Flexi Master Bot**. Πώς μπορώ να σε βοηθήσω με το δίκτυο;
+        </div>`;
+
+    // Εμφανίζουμε ξανά τις επιλογές (Πληρωμή, Host κτλ) [cite: 84, 85]
+    options.style.display = 'grid';
+    flow.appendChild(options);
+}
+</script>
+</body>
+</html>
